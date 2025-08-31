@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     
     VOICE_MAX_SIZE_MB : int
 
+    MONGODB_URL : str
+    MONGODB_DATABASE : str
 
     class Config:
         env_file = '.env'
