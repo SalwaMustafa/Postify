@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     MONGODB_URL : str
     MONGODB_DATABASE : str
+    GOOGLE_API_KEY : str
 
     class Config:
         env_file = '.env'
