@@ -6,9 +6,9 @@ class Settings(BaseSettings):
     APP_VERSION : str
     MONGODB_URL : str
     MONGODB_DATABASE : str
-    GOOGLE_API_KEY: str
-    MODEL_NAME: str
-
+    GOOGLE_API_KEY : str
+    MODEL_NAME : str
+    BACKEND_URL : str
     
     class Config:
         env_file = '.env'
