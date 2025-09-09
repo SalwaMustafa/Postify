@@ -10,9 +10,10 @@ post_prompt = ChatPromptTemplate.from_messages([
     Always follow these rules:
 
     1. Strictly respect the user instructions:
-       - Complexity: {level_of_complexity}
+       - Main Goal: {main_goal}
        - Target Audience: {target_audience}
        - Tone of Voice: {tone_of_voice}
+       - Main Topic: {main_topic}
        - Language: if provided, always write in that exact language.
        - Occasion or country context: if provided, always adapt to it.
        - Do NOT add, change, or remove any detail unless the user explicitly requests an edit.  

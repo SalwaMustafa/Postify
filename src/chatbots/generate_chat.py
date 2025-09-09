@@ -4,10 +4,11 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from .prompts import post_prompt
 from scheme.generate_scheme import PostOutput
+from langchain_core.messages import AIMessage
 from .llm import model
+import json
 
-
-tool_model = model.bind_tools([PostOutput])
+tool_model = model.with_structured_output(PostOutput)
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -19,14 +20,15 @@ async def chatbot(state: State):
     user_info = state["user_info"]  
     
     formatted_prompt = post_prompt.format_messages(
-        level_of_complexity = user_info["level_of_complexity"],   
-        target_audience = user_info["target_audience"],  
-        tone_of_voice = user_info["tone_of_voice"],  
+        main_goal = user_info["mainGoal"],   
+        target_audience = user_info["targetAudience"],  
+        tone_of_voice = user_info["toneOfVoice"],  
+        main_topic = user_info["mainTopic"], 
         messages = state["messages"]
     )
 
-    response = await tool_model.ainvoke(formatted_prompt)
-    return {"messages": [response]}
+    response: PostOutput = await tool_model.ainvoke(formatted_prompt)
+    return {"messages": [AIMessage(content=json.dumps(response.dict()))]}
 
 
 def get_graph(app):
