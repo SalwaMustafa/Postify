@@ -32,8 +32,9 @@ jobs:
       - name: Install dependencies
         run:  pip install -r requirements.txt
 
-      - name: open source folder
-        run: cd src
+      - name: Run app
+        working-directory: ./src
+        run: python -m uvicorn main:app --host 0.0.0.0 --port 8000
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -73,5 +74,6 @@ jobs:
           slot-name: 'Production'
 
           
+
 
 
