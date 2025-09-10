@@ -32,6 +32,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./src
         run:  pip install -r requirements.txt
+
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -71,4 +72,7 @@ jobs:
           slot-name: 'Production'
 
           
+
+
+
 
