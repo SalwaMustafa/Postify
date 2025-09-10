@@ -22,7 +22,7 @@ def init_socket(app):
             user_info_api = f"{settings.BACKEND_URL}/business/info/{business_id}"
 
             async with httpx.AsyncClient() as client:
-                headers = {"Authorization": f"Bearer {data.get("access_token")}"}
+                headers = {"Authorization": f"Bearer {data.get('access_token')}"}
                 response = await client.get(user_info_api, headers=headers)
                 response.raise_for_status()
                 user_info = response.json()
@@ -103,7 +103,7 @@ def init_socket(app):
             
 
             async with httpx.AsyncClient() as client:
-                headers = {"Authorization": f"Bearer {data.get("access_token")}"}
+                headers = {"Authorization": f"Bearer {data.get('access_token')}"}
                 response = await client.post(url, json=post_data, headers=headers)
                 response.raise_for_status()
 
