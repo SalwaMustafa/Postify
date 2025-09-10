@@ -30,8 +30,7 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run:  pip install -r requirements.txt
-
+        run: pip install -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -59,9 +58,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_058ADC8B8AB64164B17DC36CD27F2D8D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_33381401966341B3B95145186D503D06 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_63EC3F9B6BB640F6B47D177A8EC69D97 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D20D947D2369498E812D280123111B0C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_8642CC6B1C95454EA3EFF4D30CF3130A }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0351B591A51D4C308CEEC2A7ACFECA3C }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -69,9 +68,4 @@ jobs:
         with:
           app-name: 'Postify'
           slot-name: 'Production'
-
           
-
-
-
-
