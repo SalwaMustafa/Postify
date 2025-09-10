@@ -6,7 +6,7 @@ from enums.DataBaseEnum import DataBaseEnum
 from chatbots.generate_chat import get_graph  
 from events import generate_events
 from events.generate_events import init_socket
-
+from .healthy_check import health_router
 
 settings = get_settings()
 app = FastAPI()
@@ -25,3 +25,4 @@ async def shutdown_event():
     app.mongo_conn.close()
 
 
+app.include_router(health_router)
