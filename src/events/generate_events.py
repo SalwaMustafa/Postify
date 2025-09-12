@@ -2,6 +2,7 @@ import socketio
 import httpx
 from helpers.config import get_settings
 import json
+from chatbots.create_message import user_preferences
 
 settings = get_settings()
 
@@ -42,7 +43,13 @@ def init_socket(app):
     @sio.on("generate_request")
     async def handle_generate(sid, data = {}):
         """
-        data = {"message": "write me a post about social media"}
+        data = {"message": "write me a post about social media",
+                "approximate_words": num,
+                "hashtags": bool,
+                "emojis": bool,
+                "required_words": [string],
+                "forbidden_words": [string]
+        }
         """
         
         if not data.get("message"):
@@ -54,13 +61,55 @@ def init_socket(app):
             session = await sio.get_session(sid)
             user_id = session["user_info"]["userId"]
 
-            await sio.emit("bot_typing", {}, to=sid)
+            await sio.emit("bot_typing", ".....", to=sid)
 
             config = {"configurable": {"thread_id": f"{user_id}_generate"}}
 
             result = await app.graph.ainvoke(
                 {
-                    "messages": [{"role": "user", "content": data["message"]}],
+                    "messages": [{"role": "user", "content": user_preferences(data)}],
+                    "user_info": session["user_info"],
+                },
+                config=config,
+            )
+            
+            msg = result["messages"][-1]
+            json_response = json.loads(msg.content)
+
+            await sio.emit("bot_message", json_response, to=sid)
+
+            session["last_post"] = json_response
+            session['approximate_words'] = data['approximate_words']
+            session['hashtags'] = data['hashtags']
+            session['emojis'] = data['emojis']
+            session['required_words'] = data['required_words']
+            session['forbidden_words'] = data['forbidden_words']
+
+            
+            await sio.save_session(sid, session)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Generate failed: {str(e)}"}, to=sid)
+
+    @sio.on("toggle_hashtags")
+    async def toggle_hashtags(sid, data = {}):
+        
+        session = await sio.get_session(sid)
+        hashtags = session.get('hashtags')
+
+        if hashtags is None:
+            await sio.emit("error", {"msg": "No post generated yet"}, to=sid)
+            return
+        
+        if hashtags:
+            session['hashtags'] = False
+
+            user_id = session["user_info"]["userId"]
+            await sio.emit("bot_typing", ".....", to=sid)
+            config = {"configurable": {"thread_id": f"{user_id}_generate"}}
+            result = await app.graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": "Remove hashtags from the post, keep everything else unchanged."}],
                     "user_info": session["user_info"],
                 },
                 config=config,
@@ -73,10 +122,79 @@ def init_socket(app):
 
             session["last_post"] = json_response
             
-            await sio.save_session(sid, session)
+            
+        else:
+            session['hashtags'] = True
+            user_id = session["user_info"]["userId"]
+            await sio.emit("bot_typing", ".....", to=sid)
+            config = {"configurable": {"thread_id": f"{user_id}_generate"}}
+            result = await app.graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": "Add hashtags to the post, keep everything else unchanged."}],
+                    "user_info": session["user_info"],
+                },
+                config=config,
+            )
 
-        except Exception as e:
-            await sio.emit("error", {"msg": f"Generate failed: {str(e)}"}, to=sid)
+            msg = result["messages"][-1]
+            json_response = json.loads(msg.content)
+
+            await sio.emit("bot_message", json_response, to=sid)
+            session["last_post"] = json_response
+
+        await sio.save_session(sid, session) 
+
+    @sio.on("toggle_emojis")
+    async def toggle_emojis(sid, data = {}):
+        session = await sio.get_session(sid)
+        emojis = session.get('emojis')
+
+        if emojis is None:
+            await sio.emit("error", {"msg": "No post generated yet"}, to=sid)
+            return
+        
+        if emojis:
+            session['emojis'] = False
+
+            user_id = session["user_info"]["userId"]
+            await sio.emit("bot_typing", ".....", to=sid)
+            config = {"configurable": {"thread_id": f"{user_id}_generate"}}
+            result = await app.graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": "Remove emojis from the post, keep everything else unchanged."}],
+                    "user_info": session["user_info"],
+                },
+                config=config,
+            )
+            
+            msg = result["messages"][-1]
+            json_response = json.loads(msg.content)
+
+            await sio.emit("bot_message", json_response, to=sid)
+
+            session["last_post"] = json_response
+            
+            
+        else:
+            session['emojis'] = True
+            user_id = session["user_info"]["userId"]
+            await sio.emit("bot_typing", ".....", to=sid)
+            config = {"configurable": {"thread_id": f"{user_id}_generate"}}
+            result = await app.graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": "Add relevant emojis naturally to the description, keep everything else unchanged."}],
+                    "user_info": session["user_info"],
+                },
+                config=config,
+            )
+
+            msg = result["messages"][-1]
+            json_response = json.loads(msg.content)
+
+            await sio.emit("bot_message", json_response, to=sid)
+            session["last_post"] = json_response
+
+        await sio.save_session(sid, session)
 
     @sio.on("publish_post")
     async def publish_post(sid, data = {}):
@@ -98,7 +216,12 @@ def init_socket(app):
             post_data = {
                 "business_id": session["business_id"],
                 "user_id": session["user_info"]["userId"],
-                "content" : session["last_post"]
+                "content" : session["last_post"],
+                "approximate_words": session.get('approximate_words'),
+                "hashtags": session.get('hashtags',False),
+                "emojis": session.get('emojis',False),
+                "required_words": session.get('required_words',[]),
+                "forbidden_words": session.get('forbidden_words',[])
             }
             
 

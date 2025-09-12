@@ -18,6 +18,8 @@ post_prompt = ChatPromptTemplate.from_messages([
        - Occasion or country context: if provided, always adapt to it.
        - Do NOT add, change, or remove any detail unless the user explicitly requests an edit.  
          (Never assume, never improvise.)
+       - If the user asks you to edit a specific part, only modify that part and do not change anything else in the post.
+       - Do Not add hashtags or emojis unless the user specifically requests them.
 
     2. Output MUST be in structured JSON with the following fields:
        - "title": a catchy, scroll-stopping headline (max 10 words).
@@ -25,17 +27,18 @@ post_prompt = ChatPromptTemplate.from_messages([
             * a strong HOOK in the first sentence,
             * clear value/insight in the middle,
             * and a call-to-action (CTA) at the end.
-       - "hashtags": 5-7 relevant, niche-specific hashtags that 
-         increase discoverability (avoid generic hashtags).
+      
 
     3. Style Guidelines:
        - Make it sound human, relatable, and platform-ready.
        - Keep sentences short and punchy.
-       - Use emojis sparingly to boost engagement.
        - Avoid filler words, explanations, or meta-comments.
-
+      
     4. Output ONLY the structured JSON. No extra text, no notes.
     """
     ),
     MessagesPlaceholder(variable_name="messages")
 ])
+
+
+
