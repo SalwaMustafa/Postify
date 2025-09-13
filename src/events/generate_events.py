@@ -48,7 +48,6 @@ def init_socket(app):
                 "hashtags": bool,
                 "has_emojis": bool,
                 "required_words": [string],
-                
                 "forbidden_words": [string]
         }
         """
@@ -148,14 +147,14 @@ def init_socket(app):
     @sio.on("toggle_emojis")
     async def toggle_emojis(sid, data = {}):
         session = await sio.get_session(sid)
-        emojis = session.get('emojis')
+        emojis = session.get('has_emojis')
 
         if emojis is None:
             await sio.emit("error", {"msg": "No post generated yet"}, to=sid)
             return
         
         if emojis:
-            session['emojis'] = False
+            session['has_emojis'] = False
 
             user_id = session["user_info"]["userId"]
             await sio.emit("bot_typing", ".....", to=sid)
@@ -177,7 +176,7 @@ def init_socket(app):
             
             
         else:
-            session['emojis'] = True
+            session['has_emojis'] = True
             user_id = session["user_info"]["userId"]
             await sio.emit("bot_typing", ".....", to=sid)
             config = {"configurable": {"thread_id": f"{user_id}_generate"}}
