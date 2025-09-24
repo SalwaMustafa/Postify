@@ -46,7 +46,7 @@ def init_socket(app):
         data = {"message": "write me a post about social media",
                 "approximate_words": num,
                 "hashtags": bool,
-                "emojis": bool,
+                "has_emojis": bool,
                 "required_words": [string],
                 "forbidden_words": [string]
         }
@@ -81,7 +81,7 @@ def init_socket(app):
             session["last_post"] = json_response
             session['approximate_words'] = data['approximate_words']
             session['hashtags'] = data['hashtags']
-            session['emojis'] = data['emojis']
+            session['has_emojis'] = data['emojis']
             session['required_words'] = data['required_words']
             session['forbidden_words'] = data['forbidden_words']
 
@@ -147,14 +147,14 @@ def init_socket(app):
     @sio.on("toggle_emojis")
     async def toggle_emojis(sid, data = {}):
         session = await sio.get_session(sid)
-        emojis = session.get('emojis')
+        emojis = session.get('has_emojis')
 
         if emojis is None:
             await sio.emit("error", {"msg": "No post generated yet"}, to=sid)
             return
         
         if emojis:
-            session['emojis'] = False
+            session['has_emojis'] = False
 
             user_id = session["user_info"]["userId"]
             await sio.emit("bot_typing", ".....", to=sid)
@@ -176,7 +176,7 @@ def init_socket(app):
             
             
         else:
-            session['emojis'] = True
+            session['has_emojis'] = True
             user_id = session["user_info"]["userId"]
             await sio.emit("bot_typing", ".....", to=sid)
             config = {"configurable": {"thread_id": f"{user_id}_generate"}}
@@ -215,11 +215,10 @@ def init_socket(app):
             url = f"{settings.BACKEND_URL}/post"
             post_data = {
                 "business_id": session["business_id"],
-                "user_id": session["user_info"]["userId"],
-                "content" : session["last_post"],
+                "title" : session["last_post"]["title"],
+                "description": session["last_post"]["description"],
                 "approximate_words": session.get('approximate_words'),
-                "hashtags": session.get('hashtags',False),
-                "emojis": session.get('emojis',False),
+                "has_emojis": session.get('has_emojis',False),
                 "required_words": session.get('required_words',[]),
                 "forbidden_words": session.get('forbidden_words',[])
             }

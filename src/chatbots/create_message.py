@@ -9,7 +9,7 @@ def user_preferences(content):
         "forbidden_words": [string]
     }
     """
-    message = f"{content['message']} and make it around {content['approximate_words']} words."
+    message = f"{content['message']} and make it around {content['approximate_words']*2} words."
 
     if content['emojis']:
         message += " Add relevant emojis naturally to the description."
