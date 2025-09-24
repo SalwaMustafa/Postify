@@ -11,7 +11,7 @@ sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 
 def init_socket(app):
     app.mount("/", socketio.ASGIApp(sio, app))
-
+    
     @sio.on("init_user")
     async def init_user(sid, data = {} ):
         """
@@ -236,3 +236,60 @@ def init_socket(app):
 
         except Exception as e:
             await sio.emit("error", {"msg": f"Publish failed: {str(e)}"}, to=sid)
+
+    
+    @sio.on("init_ask")
+    async def init_ask(sid, data = {}):
+        """
+        data = {"thread_id": "user123+2025-09-12T16:00:00Z"}
+        """
+        try:
+            
+
+            session_data = {"thread_id": data.get("thread_id")}
+
+            await sio.save_session(sid, session_data)
+            
+            await sio.emit("ack", {"msg": "User info received"}, to=sid)
+           
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Init failed: {str(e)}"}, to=sid)
+
+
+    @sio.on("ask_request")
+    async def handle_ask(sid, data = {}):
+        """
+        data = {"message":"what is the best time to post on instagram?"}
+        """
+        
+        if not data.get("message"):
+            await sio.emit("error", {"msg": "No message received"}, to=sid)
+            return
+
+        try:
+
+            session = await sio.get_session(sid)
+            await sio.emit("bot_typing", ".....", to=sid)
+
+
+            config = {"configurable": {"thread_id": session.get("thread_id")}}
+            result = await app.ask_graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": data.get("message")}],
+                },
+                config=config,
+            )
+            
+            msg = result["messages"][-1]
+
+            await sio.emit("bot_message", msg.content, to=sid)
+            await sio.save_session(sid, session)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Generate failed: {str(e)}"}, to=sid)
+
+
+
+
+    
+
