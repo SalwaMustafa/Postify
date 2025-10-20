@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY : str
     MODEL_NAME : str
     BACKEND_URL : str
+    HF_TOKEN : str
+    VOICE_URL : str
     
     class Config:
         env_file = '.env'

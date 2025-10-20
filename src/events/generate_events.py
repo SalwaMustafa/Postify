@@ -1,8 +1,13 @@
+import os
+import tempfile
+import requests
 import socketio
 import httpx
+import base64
 from helpers.config import get_settings
 import json
 from chatbots.create_message import user_preferences
+from chatbots.llm import voice_headers,voice_model
 
 settings = get_settings()
 
@@ -46,7 +51,7 @@ def init_socket(app):
         data = {"message": "write me a post about social media",
                 "approximate_words": num,
                 "hashtags": bool,
-                "has_emojis": bool,
+                "emojis": bool,
                 "required_words": [string],
                 "forbidden_words": [string]
         }
@@ -60,6 +65,84 @@ def init_socket(app):
             
             session = await sio.get_session(sid)
             user_id = session["user_info"]["userId"]
+
+            await sio.emit("bot_typing", ".....", to=sid)
+
+            config = {"configurable": {"thread_id": f"{user_id}_generate"}}
+
+            result = await app.graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": user_preferences(data)}],
+                    "user_info": session["user_info"],
+                },
+                config=config,
+            )
+            
+            msg = result["messages"][-1]
+            json_response = json.loads(msg.content)
+
+            await sio.emit("bot_message", json_response, to=sid)
+
+            session["last_post"] = json_response
+            session['approximate_words'] = data['approximate_words']
+            session['hashtags'] = data['hashtags']
+            session['has_emojis'] = data['emojis']
+            session['required_words'] = data['required_words']
+            session['forbidden_words'] = data['forbidden_words']
+
+            
+            await sio.save_session(sid, session)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Generate failed: {str(e)}"}, to=sid)
+
+    os.makedirs("uploads", exist_ok=True) 
+    @sio.on("generate_voice")
+    async def generate_voice(sid, data = {}):
+        """
+        data = {"audio": "base64 string",
+                "approximate_words": num,
+                "hashtags": bool,
+                "emojis": bool,
+                "required_words": [string],
+                "forbidden_words": [string]
+        }
+        """
+        try:
+            if not data.get("audio"):
+                await sio.emit("error", {"msg": "No audio received"}, to=sid)
+                return
+
+           
+            audio_data = base64.b64decode(data["audio"])
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+                temp_audio.write(audio_data)
+                temp_audio_path = temp_audio.name
+
+            try:
+                await sio.emit("status", {"msg": "Transcribing audio..."}, to=sid)
+                with open(temp_audio_path, "rb") as f:
+                    data = f.read()
+
+                response = requests.post(voice_model, headers=voice_headers, data=data)
+
+                os.unlink(temp_audio_path)
+
+                await sio.emit("transcription", response.json(), to=sid)
+
+            except Exception as e:
+                if os.path.exists(temp_audio_path):
+                    os.unlink(temp_audio_path)
+                await sio.emit("error", {"msg": f"Transcription failed: {str(e)}"}, to=sid)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Audio processing failed: {str(e)}"}, to=sid)
+
+        try:
+            
+            session = await sio.get_session(sid)
+            user_id = session["user_info"]["userId"]
+            data['message'] = response.json().get('text','')
 
             await sio.emit("bot_typing", ".....", to=sid)
 
@@ -289,6 +372,62 @@ def init_socket(app):
 
 
 
+    @sio.on("ask_voice")
+    async def handle_ask_voice(sid, data = {}):
+        """
+        data = {"audio":"base64 string"}
+        """
 
-    
+        try:
+            if not data.get("audio"):
+                await sio.emit("error", {"msg": "No audio received"}, to=sid)
+                return
 
+           
+            audio_data = base64.b64decode(data["audio"])
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+                temp_audio.write(audio_data)
+                temp_audio_path = temp_audio.name
+
+            try:
+                await sio.emit("status", {"msg": "Transcribing audio..."}, to=sid)
+                with open(temp_audio_path, "rb") as f:
+                    data = f.read()
+
+                response = requests.post(voice_model, headers=voice_headers, data=data)
+
+                os.unlink(temp_audio_path)
+
+                await sio.emit("transcription", response.json(), to=sid)
+
+            except Exception as e:
+                if os.path.exists(temp_audio_path):
+                    os.unlink(temp_audio_path)
+                await sio.emit("error", {"msg": f"Transcription failed: {str(e)}"}, to=sid)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Audio processing failed: {str(e)}"}, to=sid)
+
+        try:
+
+            session = await sio.get_session(sid)
+            await sio.emit("bot_typing", ".....", to=sid)
+            data['message'] = response.json().get('text','')
+        
+            config = {"configurable": {"thread_id": session.get("thread_id")}}
+            result = await app.ask_graph.ainvoke(
+                {
+                    "messages": [{"role": "user", "content": data.get("message")}],
+                },
+                config=config,
+            )
+
+            msg = result["messages"][-1]
+
+            await sio.emit("bot_message", msg.content, to=sid)
+            await sio.save_session(sid, session)
+
+        except Exception as e:
+            await sio.emit("error", {"msg": f"Generate failed: {str(e)}"}, to=sid)
+
+            
