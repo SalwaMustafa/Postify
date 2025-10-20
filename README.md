@@ -19,9 +19,7 @@ This project is an **AI-powered marketing assistant** designed to help users cre
 - **Database**: MongoDB
 - **Containerization**: Docker & Docker Compose
 - **Environment Management**: Conda
-- **API Documentation**: OpenAPI
 - **Real-time Communication**: Socket.IO
-- **Cloud Platform**: Microsoft Azure
 - **Deployment**: Azure App Service / Azure Container Instances
 
 ##  How to Run  
