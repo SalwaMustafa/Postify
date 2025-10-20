@@ -7,17 +7,22 @@ This project is an **AI-powered marketing assistant** designed to help users cre
 
 ## AI Features  
 
-- AI-Driven Marketing Plan  
-- Content Creation Assistance  
-- Insights & Performance Analysis  
+- **AI-Driven Marketing Plans** - Generate comprehensive marketing strategies tailored to your business goals
+- **Content Creation Assistance** - Create engaging posts, captions, and descriptions with AI
+- **Interactive Chat & Voice Interface** - Conversational AI for marketing guidance and content ideation
 
 ## Tech Stack 
 
-- Python  
-- FastAPI  
-- MongoDB 
-- Docker
-- LangGraph
+- **Backend Framework**: FastAPI
+- **Programming Language**: Python 3.10+
+- **AI Framework**: LangGraph, LangChain
+- **Database**: MongoDB
+- **Containerization**: Docker & Docker Compose
+- **Environment Management**: Conda
+- **API Documentation**: OpenAPI
+- **Real-time Communication**: Socket.IO
+- **Cloud Platform**: Microsoft Azure
+- **Deployment**: Azure App Service / Azure Container Instances
 
 ##  How to Run  
 
@@ -40,6 +45,16 @@ cd src
 cp .env.example .env
 pip install -r requirements.txt
 ```
+### Configure environment variables:
+Edit the `.env` file with your API keys and configuration:
+```env
+MODEL_NAME=your_model_name
+GOOGLE_API_KEY=your_google_api_key
+HF_TOKEN=your_huggingface_token
+VOICE_URL=your_voice_model_url
+MONGODB_URL=your_mongodb_connection_string
+```
+
 ### Run Docker Compose Services
 ```bash
 docker compose up
