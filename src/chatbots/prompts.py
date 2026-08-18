@@ -31,13 +31,6 @@ post_prompt = ChatPromptTemplate.from_messages([
             * and a call-to-action (CTA) at the end.
       
 
-    4. Style Guidelines:
-       - Make it sound human, relatable, and platform-ready.
-       - Keep sentences short and punchy.
-       - Avoid filler words, explanations, or meta-comments.
-      
-    5. Output ONLY the structured JSON. No extra text, no notes.
-
     """
     ),
     MessagesPlaceholder(variable_name="messages")

@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessage
 from .llm import model, tavily_tool
 from helpers.config import get_settings
 import logging
+import json
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -17,9 +18,10 @@ class State(TypedDict):
 
 class PostGraph:
 
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, memory):
+        self.memory = memory
         self.settings = get_settings()
+        self.structured_model = model.with_structured_output(PostOutput)
         self.llm_with_tools = model.bind_tools([tavily_tool])
         self.logger = logging.getLogger(__name__)
         self.tool_node = ToolNode([tavily_tool])
@@ -43,14 +45,7 @@ class PostGraph:
 
 
     async def final_formatter(self, state: State):
-
-        structured_model = model.with_structured_output(PostOutput)
-
-        last_ai_message = next(
-        msg for msg in reversed(state["messages"])
-        if isinstance(msg, AIMessage)
-        )
-
+        last_ai_message = next((msg for msg in reversed(state["messages"]) if isinstance(msg, AIMessage)), None)
         content = last_ai_message.content
 
         if isinstance(content, list):
@@ -65,11 +60,11 @@ class PostGraph:
         else:
             text_content = content
 
-        response = await structured_model.ainvoke(text_content)
+        response = await self.structured_model.ainvoke(text_content)
 
         return {
             "messages": [
-                AIMessage(content=response.model_dump_json(ensure_ascii=False))
+                AIMessage(content=json.dumps(response.model_dump(), ensure_ascii=False))
             ]
         }
 
@@ -100,5 +95,5 @@ class PostGraph:
         graph_builder.add_edge("tools", "chatbot")
         graph_builder.add_edge("final", END)
 
-        return graph_builder.compile(checkpointer = self.app.memory_generate)
+        return graph_builder.compile(checkpointer = self.memory)
 

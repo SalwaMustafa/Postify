@@ -15,9 +15,9 @@ class State(TypedDict):
 
 class AskGraph:
 
-    def __init__(self, app):
+    def __init__(self, memory):
 
-        self.app = app
+        self.memory = memory
         self.llm_with_tools = model.bind_tools([tavily_tool])
         self.logger = logging.getLogger(__name__)
         self.tool_node = ToolNode([tavily_tool])
@@ -62,5 +62,5 @@ class AskGraph:
 
         graph_builder.add_edge("tools", "chatbot")
 
-        return graph_builder.compile(checkpointer=self.app.memory_ask)
+        return graph_builder.compile(checkpointer=self.memory)
         
