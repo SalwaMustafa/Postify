@@ -8,10 +8,13 @@ from helpers.config import get_settings
 import json
 from chatbots.create_message import user_preferences
 from chatbots.llm import voice_headers,voice_model
+import asyncio
 
 settings = get_settings()
 
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*", 
+                           ping_timeout=120, ping_interval=25,
+                           logger=True, engineio_logger=True)
 socket_app = socketio.ASGIApp(sio)
 
 
@@ -32,7 +35,7 @@ def init_socket(app):
                 response = await client.get(user_info_api, headers=headers)
                 response.raise_for_status()
                 user_info = response.json()
-                
+
 
             session_data = {
                 "business_id": business_id,
@@ -64,19 +67,23 @@ def init_socket(app):
         try:
             
             session = await sio.get_session(sid)
+            if not session or "user_info" not in session:
+                await sio.emit("error", {"msg": "User not initialized"}, to=sid)
+                return
+            
             user_id = session["user_info"]["userId"]
 
             await sio.emit("bot_typing", ".....", to=sid)
 
             config = {"configurable": {"thread_id": f"{user_id}_generate"}}
-
+            full_message = user_preferences(data)
             result = await app.graph.ainvoke(
-                {
-                    "messages": [{"role": "user", "content": user_preferences(data)}],
-                    "user_info": session["user_info"],
-                },
-                config=config,
-            )
+                        {
+                            "messages": [{"role": "user", "content": full_message}],
+                            "user_info": session["user_info"],
+                        },
+                        config=config,
+                    )
             
             msg = result["messages"][-1]
             json_response = json.loads(msg.content)
@@ -364,7 +371,21 @@ def init_socket(app):
             
             msg = result["messages"][-1]
 
-            await sio.emit("bot_message", msg.content, to=sid)
+            if isinstance(msg.content, list):
+            
+                text_content = "\n".join(
+                    block.get("text", "")
+                    for block in msg.content
+                    if isinstance(block, dict)
+                    and block.get("type") == "text"
+                )
+            
+            else:
+                text_content = msg.content
+
+            
+
+            await sio.emit("bot_message", {"AI_Response": text_content}, to=sid)
             await sio.save_session(sid, session)
 
         except Exception as e:

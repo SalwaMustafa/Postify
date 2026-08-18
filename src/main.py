@@ -18,12 +18,15 @@ app.mount("/socket.io", socket_app)
 async def startup_event():
     app.mongo_conn = MongoClient(settings.MONGODB_URL)
     app.db_client = app.mongo_conn[settings.MONGODB_DATABASE]
-    app.memory_generate = MongoDBSaver(app.db_client[DataBaseEnum.GENERATE_COLLECTION.value])
-    app.memory_ask = MongoDBSaver(app.db_client[DataBaseEnum.ASK_COLLECTION.value])
+    app.memory_generate = MongoDBSaver(client = app.mongo_conn, db_name=settings.MONGODB_DATABASE,
+                                       checkpoint_collection_name= DataBaseEnum.GENERATE_COLLECTION.value)
+    app.memory_ask = MongoDBSaver(client = app.mongo_conn, db_name=settings.MONGODB_DATABASE,
+                                  checkpoint_collection_name= DataBaseEnum.ASK_COLLECTION.value)
+    
     app.chat_history = app.db_client[DataBaseEnum.CHAT_HISTORY.value]
-    app.assistant_1 = PostGraph(app)
+    app.assistant_1 = PostGraph(app.memory_generate)
     app.graph = app.assistant_1.graph
-    app.assistant_2 = AskGraph(app)
+    app.assistant_2 = AskGraph(app.memory_ask)
     app.ask_graph = app.assistant_2.graph
     init_socket(app)
 
